@@ -17,19 +17,21 @@
         body {
             background-color: #fff0f3;
             font-family: 'Quicksand', sans-serif;
-            overflow: hidden;
+            overflow: hidden; /* Fő képernyő görgetésének tiltása */
             height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
         }
 
-        /* 1. FÁZIS: A KÉRDÉS (Ezzel kezdünk) */
+        /* 1. FÁZIS: A KÉRDÉS */
         #question-stage {
             position: absolute;
             text-align: center;
             z-index: 30;
             transition: opacity 0.8s ease;
+            width: 100%;
+            padding: 0 20px;
         }
 
         #question-stage h1 {
@@ -37,12 +39,14 @@
             font-size: 5rem;
             color: #c9184a;
             margin-bottom: 30px;
+            line-height: 1.2;
         }
 
         .btn-group {
             display: flex;
             gap: 20px;
             justify-content: center;
+            flex-wrap: wrap; /* Mobilon engedjük, hogy egymás alá kerüljenek, ha szűk a hely */
         }
 
         .btn {
@@ -53,6 +57,7 @@
             cursor: pointer;
             transition: all 0.3s ease;
             font-weight: bold;
+            min-width: 150px;
         }
 
         #yesBtn {
@@ -70,6 +75,7 @@
             background-color: #ced4da;
             color: #495057;
             position: relative;
+            z-index: 40; /* Hogy mindig a többi elem felett maradjon elugráskor */
         }
 
         /* 2. FÁZIS: A SZÍV ANIMÁCIÓ */
@@ -78,7 +84,6 @@
             width: 100%;
             height: 100%;
             display: none;
-            /* Kezdetben rejtve */
             justify-content: center;
             align-items: center;
             z-index: 10;
@@ -106,12 +111,16 @@
             height: 100%;
             opacity: 0;
             transition: opacity 1.5s ease;
+            position: absolute;
+            top: 0;
+            left: 0;
+            overflow-y: auto; /* Mobilon görgethető legyen, ha hosszú a szöveg */
         }
 
         .split-screen {
             display: flex;
             width: 100%;
-            height: 100%;
+            min-height: 100%; /* Engedjük megnyúlni mobilon */
         }
 
         .left-rose {
@@ -120,6 +129,7 @@
             justify-content: center;
             align-items: center;
             background: linear-gradient(to right, #fff0f3, #ffffff);
+            padding: 20px;
         }
 
         .right-message {
@@ -156,6 +166,7 @@
 
         .rose-svg {
             width: 80%;
+            max-width: 400px;
             height: auto;
         }
 
@@ -168,6 +179,63 @@
         .hidden {
             opacity: 0 !important;
             pointer-events: none;
+        }
+
+        /* =========================================
+           MOBIL RESZPONSZÍV BEÁLLÍTÁSOK (768px alatt)
+           ========================================= */
+        @media (max-width: 768px) {
+            /* Kérdés fázis kisebb betűkkel */
+            #question-stage h1 {
+                font-size: 3.5rem;
+                margin-bottom: 20px;
+            }
+
+            .btn {
+                font-size: 1rem;
+                padding: 12px 30px;
+            }
+
+            /* Szív fázis kitölti a képernyőt */
+            svg#theSvg {
+                width: 95%;
+                height: 95%;
+            }
+
+            /* Végső fázis: Egymás alá kerül a rózsa és a szöveg */
+            .split-screen {
+                flex-direction: column;
+                height: auto;
+            }
+
+            .left-rose {
+                background: linear-gradient(to bottom, #fff0f3, #ffffff);
+                min-height: 40vh; /* Kisebb helyet foglaljon a rózsa */
+                padding: 40px 20px 20px 20px;
+            }
+
+            .rose-svg {
+                width: 60%;
+            }
+
+            .right-message {
+                padding: 20px;
+                align-items: flex-start; /* Ne középre, hanem felülre igazítson */
+            }
+
+            .letter {
+                padding: 25px;
+                margin-bottom: 30px; /* Hely a görgetés alján */
+            }
+
+            .letter h2 {
+                font-size: 2.2rem;
+            }
+
+            .letter p {
+                font-size: 1.05rem;
+                line-height: 1.6;
+            }
         }
     </style>
 </head>
@@ -224,11 +292,10 @@
                     <h2>Neked szól...</h2>
                     <p>
                         Most picit másmilyen leszek, mint szoktam, remélem, nem bánod, és most igenis meg fogod kapni a tipikus sablonszöveget, de legalább igaz.
-
+                        <br><br>
                         Az elmúlt napokban nagyon fontos része lettél az életemnek, ami fura, mert nem ismerjük egymást olyan régóta, de valahogy mégis megfogott valami benned. Talán a mosolyod? Talán a szépséged? Talán a hozzáállásod? Őszintén, lehet, hogy minden, de egyáltalán nem bánom. Egy olyan személyt találtam, aki nem más akar lenni, hanem önmaga; egy személyt, akinek céljai vannak, és ebben szeretnék neki segíteni.
-                        
+                        <br><br>
                         Inspiráló látni azt az erőt és elszántságot, ami benned van, és őszintén hálás vagyok, hogy a részese lehetek a mindennapjaidnak. Szeretném, ha tudnád, hogy rám bármikor számíthatsz. Külön köszönöm neked, hogy te lettél a Valentinom – ez a bizalom többet jelent számomra, mint amit szavakkal ki tudnék fejezni. Izgatottan várom, hová vezet ez a közös út, amit elkezdtünk, és örülök, hogy melletted fedezhetem fel a következő fejezeteket.
-
                     </p>
                 </div>
             </div>
@@ -247,13 +314,26 @@
 
         // --- 1. KÉRDÉS KEZELÉSE ---
 
-        // "Nem" gomb elugrik
-        noBtn.addEventListener("mouseover", () => {
-            const x = Math.random() * (window.innerWidth - noBtn.offsetWidth);
-            const y = Math.random() * (window.innerHeight - noBtn.offsetHeight);
+        // "Nem" gomb elugrik (A képernyő látható részén belül marad)
+        function teleportNoBtn() {
+            // Számoljuk ki a biztonságos területet, hogy ne lógjon ki a gomb a képernyőről
+            const safeWidth = window.innerWidth - noBtn.offsetWidth - 20;
+            const safeHeight = window.innerHeight - noBtn.offsetHeight - 20;
+            const x = Math.max(10, Math.random() * safeWidth);
+            const y = Math.max(10, Math.random() * safeHeight);
+            
             noBtn.style.position = "absolute";
             noBtn.style.left = x + "px";
             noBtn.style.top = y + "px";
+        }
+
+        // Asztali gépre (Egér fölé húzás)
+        noBtn.addEventListener("mouseover", teleportNoBtn);
+        
+        // Mobilra (Érintés megkísérlése - nem engedi a rákattintást, azonnal elugrik)
+        noBtn.addEventListener("touchstart", (e) => {
+            e.preventDefault(); 
+            teleportNoBtn();
         });
 
         // "Igen" gomb -> Szív animáció indítása
